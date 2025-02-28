@@ -1,6 +1,4 @@
-﻿using System;
-
-using Shouldly;
+﻿using Shouldly;
 
 using Xunit;
 
@@ -15,10 +13,28 @@ namespace Tests
 
       tree.Nodes.ShouldBeEmpty();
     }
+
+    [Fact]
+    public void enthält_hinzugefügtes_Element()
+    {
+      var tree = new Tree();
+      var element = new object();
+
+      tree.Add(element);
+
+      tree.Nodes.ShouldContain(element);
+    }
   }
 
   public class Tree
   {
-    public IEnumerable<object> Nodes { get; } = new List<object>();
+    readonly List<object> _nodes = new();
+
+    public IEnumerable<object> Nodes => _nodes;
+
+    public void Add(object element)
+    {
+      _nodes.Add(element);
+    }
   }
 }
