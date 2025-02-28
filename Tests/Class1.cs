@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using Shouldly;
@@ -75,12 +76,74 @@ namespace Tests
 
       tree.ShouldBeEquivalentTo(deserialized);
     }
+
+    [Fact]
+    public void kann_als_BindingList_abgebildet_werden()
+    {
+      var vater = new Person("Donald Trump");
+      var sohn = new Person("Eric Trump");
+      var vaterNode = new TreeNode<Person>(vater);
+      var sohnNode = new TreeNode<Person>(sohn);
+      vaterNode.Add(sohnNode);
+      var root = new TreeNode<Person>();
+      root.Add(vaterNode);
+
+      var list = new BindingList<BindingListRecord>();
+      new Visitor<Person>(list, null).Visit(root);
+
+      list.ShouldContain(new BindingListRecord(root.GetHashCode(), null, null));
+      list.ShouldContain(new BindingListRecord(vaterNode.GetHashCode(), root.GetHashCode(), new Person("Donald Trump")));
+      list.ShouldContain(new BindingListRecord(sohnNode.GetHashCode(), vaterNode.GetHashCode(), new Person("Eric Trump")));
+
+      // bool wasChanged = false;
+      // list.ListChanged += (sender, args) =>
+      // {
+      //   wasChanged = true;
+      // };
+
+      // root.PropertyChanged += () => {
+      //   list.Clear();
+      //   list.RaiseListChangedEvents = false;
+      //   new Visitor<Person>(list, null).Visit(root)
+      //   list.RaiseListChangedEvents = true;
+      // }
+      // root.Add(new TreeNode<Person>(new Person("Alex")));
+      //
+      // wasChanged.ShouldBeTrue();
+    }
   }
+
+  public class Visitor<T>
+  {
+    readonly BindingList<BindingListRecord> _list;
+    readonly TreeNode<T>? _parent;
+
+    public Visitor(BindingList<BindingListRecord> list, TreeNode<T>? parent)
+    {
+      _list = list;
+      _parent = parent;
+    }
+
+    public void Visit(TreeNode<T> treeNode)
+    {
+      _list.Add(new BindingListRecord(
+        treeNode.GetHashCode(),
+        _parent?.GetHashCode() ?? null,
+        treeNode.Daten));
+
+      foreach (var child in treeNode.Nodes)
+      {
+        new Visitor<T>(_list, treeNode).Visit(child);
+      }
+    }
+  }
+
+  public record BindingListRecord(int Id, int? ParentId, object Daten);
 
   public class TreeNode<T>
   {
     readonly List<TreeNode<T>> _nodes = new();
-    public T Daten { get; init;  }
+    public T? Daten { get; init; }
 
     public TreeNode()
     {
@@ -108,8 +171,51 @@ namespace Tests
     }
   }
 
-  class Person
+  // record Person(string Name);
+
+  class Person : IEquatable<Person>
   {
+    public bool Equals(Person? other)
+    {
+      if (other is null)
+      {
+        return false;
+      }
+
+      if (ReferenceEquals(this, other))
+      {
+        return true;
+      }
+
+      return Name == other.Name;
+    }
+
+    public override bool Equals(object? obj)
+    {
+      if (obj is null)
+      {
+        return false;
+      }
+
+      if (ReferenceEquals(this, obj))
+      {
+        return true;
+      }
+
+      if (obj.GetType() != GetType())
+      {
+        return false;
+      }
+
+      return Equals((Person) obj);
+    }
+
+    public override int GetHashCode() => Name.GetHashCode();
+
+    public static bool operator ==(Person? left, Person? right) => Equals(left, right);
+
+    public static bool operator !=(Person? left, Person? right) => !Equals(left, right);
+
     [JsonConstructor]
     Person()
     {
