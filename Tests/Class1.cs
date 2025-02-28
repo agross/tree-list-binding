@@ -15,7 +15,7 @@ namespace Tests
     {
       var tree = new TreeNode<object>();
 
-      tree.Nodes.ShouldBeEmpty();
+      tree.ShouldBeEmpty();
     }
 
     [Fact]
@@ -26,7 +26,7 @@ namespace Tests
 
       tree.Add(element);
 
-      tree.Nodes.ShouldContain(element);
+      tree.ShouldContain(element);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ namespace Tests
       parent.Add(child);
       root.Add(parent);
 
-      root.Nodes.ShouldContain(parent);
-      parent.Nodes.ShouldContain(child);
+      root.ShouldContain(parent);
+      parent.ShouldContain(child);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ namespace Tests
 
       root.Remove(parent);
 
-      root.Nodes.ShouldBeEmpty();
+      root.ShouldBeEmpty();
     }
 
     [Fact]
@@ -92,8 +92,12 @@ namespace Tests
       new Visitor<Person>(list, null).Visit(root);
 
       list.ShouldContain(new BindingListRecord(root.GetHashCode(), null, null));
-      list.ShouldContain(new BindingListRecord(vaterNode.GetHashCode(), root.GetHashCode(), new Person("Donald Trump")));
-      list.ShouldContain(new BindingListRecord(sohnNode.GetHashCode(), vaterNode.GetHashCode(), new Person("Eric Trump")));
+      list.ShouldContain(new BindingListRecord(vaterNode.GetHashCode(),
+        root.GetHashCode(),
+        new Person("Donald Trump")));
+      list.ShouldContain(new BindingListRecord(sohnNode.GetHashCode(),
+        vaterNode.GetHashCode(),
+        new Person("Eric Trump")));
 
       // bool wasChanged = false;
       // list.ListChanged += (sender, args) =>
@@ -131,7 +135,7 @@ namespace Tests
         _parent?.GetHashCode() ?? null,
         treeNode.Daten));
 
-      foreach (var child in treeNode.Nodes)
+      foreach (var child in treeNode)
       {
         new Visitor<T>(_list, treeNode).Visit(child);
       }
@@ -140,11 +144,8 @@ namespace Tests
 
   public record BindingListRecord(int Id, int? ParentId, object Daten);
 
-  public class TreeNode<T>
+  public class TreeNode<T> : HashSet<TreeNode<T>>
   {
-    readonly List<TreeNode<T>> _nodes = new();
-    public T? Daten { get; init; }
-
     public TreeNode()
     {
     }
@@ -154,21 +155,7 @@ namespace Tests
       Daten = daten;
     }
 
-    public IEnumerable<TreeNode<T>> Nodes
-    {
-      get => _nodes;
-      init => _nodes = new List<TreeNode<T>>(value);
-    }
-
-    public void Add(TreeNode<T> element)
-    {
-      _nodes.Add(element);
-    }
-
-    public void Remove(TreeNode<T> element)
-    {
-      _nodes.Remove(element);
-    }
+    public T? Daten { get; set; }
   }
 
   // record Person(string Name);
