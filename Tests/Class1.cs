@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -115,6 +116,19 @@ namespace Tests
       //
       // wasChanged.ShouldBeTrue();
     }
+
+    [Fact]
+    public void erhält_Reihenfolge_des_Einfügens()
+    {
+     var tree = new TreeNode<int>();
+      tree.Add(new TreeNode<int>(1));
+      tree.Add(new TreeNode<int>(2));
+      tree.Add(new TreeNode<int>(3));
+      tree.RemoveAt(1);
+      tree.Add(new TreeNode<int>(4));
+
+      tree.Select(x => x.Daten).ShouldBe([1, 3, 4]);
+    }
   }
 
   public class Visitor<T>
@@ -144,7 +158,7 @@ namespace Tests
 
   public record BindingListRecord(int Id, int? ParentId, object Daten);
 
-  public class TreeNode<T> : HashSet<TreeNode<T>>
+  public class TreeNode<T> : KeyedCollection<TreeNode<T>,TreeNode<T>>
   {
     public TreeNode()
     {
@@ -156,6 +170,8 @@ namespace Tests
     }
 
     public T? Daten { get; set; }
+
+    protected override TreeNode<T> GetKeyForItem(TreeNode<T> item) => item;
   }
 
   // record Person(string Name);
